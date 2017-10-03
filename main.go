@@ -10,12 +10,16 @@ import (
 	"os"
 	"os/user"
 	"strings"
+	//	"debug/elf"
+//	"github.com/labstack/echo/middleware"
 )
 
 type macaddr struct {
 	name string
 	mac  string
 }
+
+var db *sql.DB
 
 func getMacAddr() ([]string, error) {
 	ifas, err := net.Interfaces()
@@ -32,12 +36,19 @@ func getMacAddr() ([]string, error) {
 	}
 	return as, nil
 }
-
-func main() {
-	db, err := sql.Open("postgres", "postgres://vallder:30061997@192.168.0.174/mac_addr")
+func init() {
+	var err error
+	db, err = sql.Open("postgres", "postgres://vallder:30061997@192.168.0.13/mac_addr")
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = db.Ping()
+	if err != nil {
+		log.Fatal()
+	}
+}
+
+func select_all() {
 	rows, err := db.Query("SELECT * FROM mac")
 	if err != nil {
 		log.Fatal(err)
@@ -55,6 +66,15 @@ func main() {
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 	}
+	for _, mac := range macs {
+		/*if len(strings.TrimSpace(mac.name)) == 14 {
+			mac.name = "unknow"
+		}*/
+		fmt.Println("\n", mac.name, strings.TrimSpace(mac.mac))
+		//fmt.Println(len(strings.TrimSpace(mac.name)))
+	}
+}
+func add_mac () {
 	user, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -78,12 +98,14 @@ func main() {
 			log.Println(MacUser, "mac is already recorded")
 		}
 	}
-	for _, mac := range macs {
-		/*if len(strings.TrimSpace(mac.name)) == 14 {
-			mac.name = "unknow"
-		}*/
-		fmt.Println("\n", mac.name, strings.TrimSpace(mac.mac))
-		//fmt.Println(len(strings.TrimSpace(mac.name)))
+}
+func main() {
+	arg := os.Args
+	switch arg[1] {
+	case "add":
+		add_mac()
+	case "ls":
+		select_all()
+		}
 	}
 
-}
