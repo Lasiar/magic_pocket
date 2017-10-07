@@ -10,9 +10,8 @@ import (
 	"os"
 	"os/user"
 	"strings"
-	//	"debug/elf"
-//	"github.com/labstack/echo/middleware"
-)
+	"flag"
+	)
 
 type macaddr struct {
 	name string
@@ -20,6 +19,30 @@ type macaddr struct {
 }
 
 var db *sql.DB
+
+func init() {
+	var err error
+	db, err = sql.Open("postgres", "postgres://vallder:30061997@192.168.0.13/mac_addr")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.Ping()
+	if err != nil {
+		log.Fatal()
+	}
+}
+
+func main() {
+	add := flag.Bool("add", false , "Добавить mac-адрес")
+	list := flag.Bool("ls", false, "Отобразить mac-адреса в базе")
+	flag.Parse()
+	if *add  == true {
+		add_mac()
+	}
+	if *list == true{
+		select_all()
+	}
+}
 
 func getMacAddr() ([]string, error) {
 	ifas, err := net.Interfaces()
@@ -35,17 +58,6 @@ func getMacAddr() ([]string, error) {
 		}
 	}
 	return as, nil
-}
-func init() {
-	var err error
-	db, err = sql.Open("postgres", "postgres://vallder:30061997@192.168.0.13/mac_addr")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Ping()
-	if err != nil {
-		log.Fatal()
-	}
 }
 
 func select_all() {
@@ -67,14 +79,10 @@ func select_all() {
 		log.Fatal(err)
 	}
 	for _, mac := range macs {
-		/*if len(strings.TrimSpace(mac.name)) == 14 {
-			mac.name = "unknow"
-		}*/
 		fmt.Println("\n", mac.name, strings.TrimSpace(mac.mac))
-		//fmt.Println(len(strings.TrimSpace(mac.name)))
 	}
 }
-func add_mac () {
+func add_mac() {
 	user, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -85,7 +93,6 @@ func add_mac () {
 		user.Name, _ = reader.ReadString('\n')
 		// convert CRLF to LF
 		user.Name = strings.Replace(user.Name, "\n", "", -1)
-
 	}
 	ArrMac, err := getMacAddr()
 	if err != nil {
@@ -95,17 +102,9 @@ func add_mac () {
 	for _, MacUser := range ArrMac {
 		_, err := db.Exec(SqlStatement, user.Name, MacUser)
 		if err != nil {
-			log.Println(MacUser, "mac is already recorded")
+			log.Println("Mac already record")
 		}
-	}
-}
-func main() {
-	arg := os.Args
-	switch arg[1] {
-	case "add":
-		add_mac()
-	case "ls":
-		select_all()
 		}
+
 	}
 
