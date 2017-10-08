@@ -36,6 +36,9 @@ func main() {
 	add := flag.Bool("add", false , "Добавить mac-адрес")
 	list := flag.Bool("ls", false, "Отобразить mac-адреса в базе")
 	flag.Parse()
+	if *add == *list {
+		flag.PrintDefaults()
+	}
 	if *add  == true {
 		add_mac()
 	}
