@@ -12,7 +12,6 @@ import (
 	"strings"
 	"flag"
 	)
-
 type macaddr struct {
 	name string
 	mac  string
@@ -22,7 +21,7 @@ var db *sql.DB
 
 func init() {
 	var err error
-	db, err = sql.Open("postgres", "postgres://vallder:30061997@192.168.0.13/mac_addr")
+	db, err = sql.Open("postgres", "postgres://vallder:30061997@192.168.0.174/mac_addr")
 	if err != nil {
 		log.Fatal(err)
 	}
