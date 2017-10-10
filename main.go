@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"database/sql"
+	"flag"
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
@@ -10,8 +11,8 @@ import (
 	"os"
 	"os/user"
 	"strings"
-	"flag"
-	)
+)
+
 type macaddr struct {
 	name string
 	mac  string
@@ -32,16 +33,16 @@ func init() {
 }
 
 func main() {
-	add := flag.Bool("add", false , "Добавить mac-адрес")
+	add := flag.Bool("add", false, "Добавить mac-адрес")
 	list := flag.Bool("ls", false, "Отобразить mac-адреса в базе")
 	flag.Parse()
 	if *add == *list {
 		flag.PrintDefaults()
 	}
-	if *add  == true {
+	if *add == true {
 		add_mac()
 	}
-	if *list == true{
+	if *list == true {
 		select_all()
 	}
 }
@@ -91,10 +92,8 @@ func add_mac() {
 	}
 	reader := bufio.NewReader(os.Stdin)
 	if user.Name == "" {
-		fmt.Print("-> ")
+		fmt.Print("your_name-> ")
 		user.Name, _ = reader.ReadString('\n')
-		// convert CRLF to LF
-		user.Name = strings.Replace(user.Name, "\n", "", -1)
 	}
 	ArrMac, err := getMacAddr()
 	if err != nil {
@@ -106,7 +105,6 @@ func add_mac() {
 		if err != nil {
 			log.Println("Mac already record")
 		}
-		}
-
 	}
 
+}
