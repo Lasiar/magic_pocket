@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"database/sql"
 	"flag"
 	"fmt"
 	_ "github.com/lib/pq"
@@ -11,25 +10,15 @@ import (
 	"os"
 	"os/user"
 	"strings"
+	"magic_pocket/lib"
+	"magic_pocket/models"
+	"github.com/olekukonko/tablewriter"
 )
 
-type macaddr struct {
-	name string
-	mac  string
-}
 
-var db *sql.DB
 
 func init() {
-	var err error
-	db, err = sql.Open("postgres", "postgres://vallder:30061997@192.168.0.102/mac_addr")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Ping()
-	if err != nil {
-		log.Fatal()
-	}
+	lib.Db = models.NewDb()
 }
 
 func main() {
@@ -40,10 +29,10 @@ func main() {
 		flag.PrintDefaults()
 	}
 	if *add == true {
-		add_mac()
+		addMac()
 	}
 	if *list == true {
-		select_all()
+		selectAll()
 	}
 }
 
@@ -63,29 +52,50 @@ func getMacAddr() ([]string, error) {
 	return as, nil
 }
 
-func select_all() {
-	rows, err := db.Query("SELECT * FROM mac")
+func selectAll() {
+	var (
+		macsAddrs []lib.MacAddr
+		macAddr lib.MacAddr
+	)
+	rows, err := lib.Db.Query("SELECT * FROM mac")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer rows.Close()
-	macs := make([]*macaddr, 0)
 	for rows.Next() {
-		mac := new(macaddr)
-		err := rows.Scan(&mac.name, &mac.mac)
+		err := rows.Scan(&macAddr.Name, &macAddr.Mac)
 		if err != nil {
 			log.Fatal(err)
 		}
-		macs = append(macs, mac)
+		macsAddrs = append(macsAddrs, macAddr)
 	}
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 	}
-	for _, mac := range macs {
-		fmt.Println("\n", mac.name, strings.TrimSpace(mac.mac))
+	for _, mac := range macsAddrs {
+		if mac.Mac == "" {
+			continue
+		}
 	}
+
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetBorder(false)
+	table.SetHeaderLine(false)
+	var v1 []string
+	for _, v := range macsAddrs {
+		if v.Mac == "" {
+			continue
+		}
+		v1 = nil
+		v1 = append(v1, strings.TrimSpace(v.Mac))
+		v1 = append(v1, strings.TrimSpace(v.Name))
+		table.Append(v1)
+	}
+	table.Render() // Send output
 }
-func add_mac() {
+func addMac() {
 	user, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -101,7 +111,7 @@ func add_mac() {
 	}
 	SqlStatement := "INSERT INTO mac (name, mac) VALUES ($1,$2)"
 	for _, MacUser := range ArrMac {
-		_, err := db.Exec(SqlStatement, user.Name, MacUser)
+		_, err := lib.Db.Exec(SqlStatement, user.Name, MacUser)
 		if err != nil {
 			log.Println("Mac already record")
 		}
